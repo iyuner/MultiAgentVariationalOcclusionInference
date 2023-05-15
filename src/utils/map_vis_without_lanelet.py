@@ -56,13 +56,31 @@ def get_x_y_lists(element, point_dict):
     return x_list, y_list
 
 
+def get_item_iterator(d):
+    """
+    Iterate over the items of a nested dictionary.
+
+    Args:
+        d: A dictionary.
+
+    Yields:
+        A tuple containing the key and value of each item in the dictionary.
+        If a value is itself a dictionary, the key and value of each item in
+        the nested dictionary will be yielded recursively.
+    """
+    for k, v in d.items():
+        yield k, v
+        if isinstance(v, dict):
+            yield from get_item_iterator(v)
+
 def set_visible_area(point_dict, axes):
     min_x = 10e9
     min_y = 10e9
     max_x = -10e9
     max_y = -10e9
 
-    for id, point in dict_utils.get_item_iterator(point_dict):
+    # print("type(point_dict)", type(point_dict),point_dict.keys() )
+    for id, point in get_item_iterator(point_dict):
         min_x = min(point.x, min_x)
         min_y = min(point.y, min_y)
         max_x = max(point.x, max_x)

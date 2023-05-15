@@ -1,5 +1,7 @@
 # Code to visualize full occlusion inference pipeline. Code is adapted from: https://github.com/interaction-dataset/interaction-dataset.
-
+import sys, os
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..' ))
+sys.path.append(BASE_DIR)
 try:
     import lanelet2
     use_lanelet2_lib = True
@@ -46,14 +48,17 @@ import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
 from collections import OrderedDict, defaultdict
-
+import sys, os
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '../..' ))
+sys.path.append(BASE_DIR)
 from src.utils import dataset_reader
 from src.utils import dataset_types
-from src.utils import map_vis_lanelet2
+# from src.utils import map_vis_lanelet2
 from src.utils import tracks_vis
 # from src.utils import dict_utils
 from src.driver_sensor_model.models_cvae import VAE
 from src.utils.interaction_utils import *
+from src.utils.tracks_vis import update_objects_plot
 
 import torch._utils
 try:
@@ -79,11 +84,12 @@ def update_plot():
     assert(timestamp >= timestamp_min), "timestamp=%i" % timestamp
     assert(timestamp % dataset_types.DELTA_TIMESTAMP_MS == 0), "timestamp=%i" % timestamp
     title_text.set_text("\nts = {}".format(timestamp))
-    tracks_vis_DR_goal_multimodal_average.update_objects_plot(timestamp, patches_dict, text_dict, axes, track_dict=track_dictionary, pedest_dict=pedestrian_dictionary,
+    update_objects_plot(timestamp, patches_dict, text_dict, axes, track_dict=track_dictionary, pedest_dict=pedestrian_dictionary,
                                     data=data, car_ids=car_ids, sensor_grids=sensor_grids, id_grids=id_grids, label_grids=label_grids, grids_dict=grids_dict,
-                                    driver_sensor_data = driver_sensor_data, driver_sensor_state_data=driver_sensor_state_data, driver_sensor_state = driver_sensor_state, driver_sensor_state_dict=driver_sensor_state_dict,
-                                    endpoint=min_max_xy, models=models, mode=mode, model=model)
-
+                                    driver_sensor_data = driver_sensor_data, driver_sensor_state_data=driver_sensor_state_data, 
+                                    driver_sensor_state = driver_sensor_state, driver_sensor_state_dict=driver_sensor_state_dict,
+                                    endpoint=min_max_xy)
+    # plt.show()
     fig.canvas.draw()
 
 
@@ -156,7 +162,7 @@ if __name__ == "__main__":
     test_set_dir = '/data/INTERACTION-Dataset-DR-v1_1/processed_data/train_test_split'
     test_set_file = 'ego_test_set.csv'
 
-    ego_files = []
+    """
     with open(os.path.join(test_set_dir, test_set_file)) as csv_file:
         csv_reader = csv.reader(csv_file, delimiter=',')
         for row in csv_reader:
@@ -198,14 +204,13 @@ if __name__ == "__main__":
         folder_model = folder_gmm
     elif args.model == 'kmeans':
         folder_model = folder_kmeans
-
+    """
     for ego_file in tqdm(ego_files):
         print(ego_file)
 
         # Visualize the paper and appendix scenarios.
-        if (ego_file != 'DR_USA_Intersection_GL_037_run_54_ego_vehicle_83.pkl') and (ego_file != 'DR_USA_Intersection_GL_021_run_60_ego_vehicle_108.pkl'):
-            continue
-
+        # if (ego_file != 'DR_USA_Intersection_GL_037_run_54_ego_vehicle_83.pkl') and (ego_file != 'DR_USA_Intersection_GL_021_run_60_ego_vehicle_108.pkl'):
+        #     continue
         ego_run = int(ego_file.split('_run_')[-1].split('_ego_')[0])
         if scenario_name[-2:] == 'VA':
             track_file_number = int(ego_file.split(scenario_name)[-1][1:4])
@@ -213,6 +218,7 @@ if __name__ == "__main__":
             if os.path.exists(os.path.join(home, middle, ego_file)):
                 data = hkl.load(os.path.join(home, middle, ego_file))
             else:
+                print(os.path.join(home, middle, ego_file))
                 continue
         elif scenario_name[-2:] == 'GL':
             middle = scenario_name
@@ -220,8 +226,9 @@ if __name__ == "__main__":
             if os.path.exists(os.path.join(home, ego_file)):
                 data = pkl.load(open(os.path.join(home, ego_file), 'rb'))
             else:
+                print(os.path.join(home, middle, ego_file))
                 continue
-            
+        print(ego_run)
         # Get the driver sensor data.
         driver_sensor_data = dict()
         driver_sensor_state_data = dict()
@@ -283,7 +290,7 @@ if __name__ == "__main__":
 
         # Create a figure.
         fig, axes = plt.subplots(1, 1)
-        fig.canvas.set_window_title("Interaction Dataset Visualization")
+        # fig.canvas.set_window_title("Interaction Dataset Visualization")
 
         # Load and draw the lanelet2 map, either with or without the lanelet2 library.
         lat_origin = 0.  # Origin is necessary to correctly project the lat lon values in the osm file to the local.
