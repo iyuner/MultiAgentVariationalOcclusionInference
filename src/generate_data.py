@@ -16,7 +16,7 @@ except:
 from utils import dataset_reader
 from utils import dataset_types
 # from utils import dict_utils
-from utils import map_vis_lanelet2
+# from utils import map_vis_lanelet2
 from utils.grid_utils import SceneObjects, global_grid, AllObjects, generateLabelGrid, generateSensorGrid
 from utils.dataset_types import Track, MotionState
 import matplotlib.pyplot as plt
@@ -144,15 +144,16 @@ def vis_state(vis_datas, ref_datas, object_id, label_grid_ego, prev_id_grid_ego,
 def Dataprocessing():
     global vis_ids, vis_ax, vis_ay, ref_ax, ref_ay, ego_id, res, gridglobal_x, gridglobal_y
 
-    main_folder = '/data/INTERACTION-Dataset-DR-v1_1/'
+    main_folder = './yiya/INTERACTION-Dataset-DR-v1_1/'
     scenarios = ['DR_USA_Intersection_GL']
     
     # Total number of track files.
     num_files = [60]
     for scene, nth_scene in zip(scenarios, num_files):
         for i in tqdm(range(nth_scene)):
-
             i_str = ['%03d' % i][0]
+            if i != 21:
+                continue
             filename = os.path.join(main_folder, 'recorded_trackfiles/'+scene+'/'+'vehicle_tracks_'+ i_str +'.csv')
             track_dict = dataset_reader.read_tracks(filename)
             filename_pedes = os.path.join(main_folder, 'recorded_trackfiles/'+scene+'/'+'pedestrian_tracks_'+ i_str +'.csv')
@@ -182,10 +183,17 @@ def Dataprocessing():
             num = 0
             sampled_key = [id for id in vehobjects if id not in processed_id][num:]
             run_count = num
+            # print("run_count", run_count)
+            
+            # if not (i_str == "037" and run_count == 54) and not (i_str == "021" and run_count == 60):
+            #     continue
+
             sampled_key = np.random.choice(sampled_key,np.minimum(100, len(sampled_key)),replace=False)
             
             for key, value in track_dict.items():
                 assert isinstance(value, Track)
+                # if key != 83:
+                #     continue
                 if key in sampled_key:
 
                     start_time = datetime.now()  
@@ -224,6 +232,10 @@ def Dataprocessing():
                         width = value.width
                         length = value.length
                         sensor_grid_ego, occluded_id, visible_id = generateSensorGrid(label_grid_ego, pre_local_x_ego, pre_local_y_ego, ego_ms, width, length, res=res, ego_flag=True)
+                        # print("sensor_grid_ego", sensor_grid_ego.shape)
+                        # print("occluded_id", occluded_id)
+                        # print("visible_id", visible_id)
+
 
                         # Convert the ego grid cells to occupied.
                         label_grid_ego[0] = np.where(label_grid_ego[0]==2., 1. ,label_grid_ego[0])
@@ -247,19 +259,21 @@ def Dataprocessing():
                         ego_data = ego_data + sum(vis_datas,[])
 
                     # Save the ego information.
-                    pkl_path = os.path.join(main_folder, 'processed_data/pkl/')
+                    pkl_path = os.path.join(main_folder, 'processed_data_1/pkl/')
                     if not os.path.exists(pkl_path):
                         os.makedirs(pkl_path)
                     ego_filename = scene+'_'+i_str+'_run_'+str(run_count)+'_ego_vehicle_'+str(key)
-                    pkl.dump(ego_data, open(str(hkl_path) + ego_filename+'.pkl', 'wb'))
-
+                    pkl.dump(ego_data, open(pkl_path + ego_filename+'.pkl', 'wb'))
+                    # print("vis_ids", vis_ids)
                     # Save only the visible reference drivers.
                     for k in range(num_vis):
                         ref_filename = scene+'_'+i_str+'_run_'+str(run_count)+'_ref_vehicle_'+str(vis_ids[k])
+                        # print("saved:", ref_filename)
                         ref_d = ref_data + ref_datas[k]
                         pkl.dump(ref_d, open(pkl_path +ref_filename+'.pkl', 'wb'))
 
                     run_count += 1
+                    # print(run_count)
                     end_time = datetime.now()
                     print(ego_filename, ', execution time:', end_time - start_time)
 
