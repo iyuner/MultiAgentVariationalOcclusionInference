@@ -1,32 +1,17 @@
 from utils import dataset_reader
 from utils.grid_utils import SceneObjects, AllObjects, generateLabelGrid, generateSensorGrid
-from utils.dataset_types import Track
 import numpy as np
 import os
 from datetime import datetime
-import glob
 from tqdm import tqdm
 import pandas as pd
-import re
 
 np.random.seed(123)
-
 
 def getstate(timestamp, track_dict, id):
     for key, value in track_dict.items():
         if key==id:
             return value.motion_states[timestamp]
-
-def getNumScene(folder):
-    # List all .csv files in the directory
-    csv_files = [f for f in os.listdir(folder) if f.endswith('.csv')]
-
-    # Use regular expressions to extract the number from each file name
-    numbers = [int(re.search(r'(\d+)', f).group(1)) for f in csv_files]
-
-    # Get the maximum number
-    max_number = max(numbers)
-    return max_number
 
 def Dataprocessing():
     global vis_ids, vis_ax, vis_ay, ref_ax, ref_ay, ego_id, res
@@ -53,7 +38,6 @@ def Dataprocessing():
 
                 # cal occlusion
                 track_pedes_dict = None # no need track_pedes_dict
-                vehobjects, _ = AllObjects(car_track_dict, track_pedes_dict)
 
                 # TODO: get ego id !!!
                 ego_id = next(iter(car_track_dict)) # now is the first car in the scene
