@@ -29,21 +29,31 @@ def Dataprocessing():
             full_reformat_data_path = os.path.join(reformat_data_folder, scene)
 
             all_data = pd.read_csv(full_data_path)
-            all_data["occluded"] = -1
+            all_data["occluded"] = -1 # init occluded
+
             new_data = pd.DataFrame()
             case_ids = all_data['case_id'].unique()
-            for case_id in case_ids:
+            for cnt, case_id in tqdm(enumerate(case_ids), total=len(case_ids)):
                 all_data_in_one_case = all_data.loc[(all_data['case_id'] == case_id) & (all_data['agent_type'] == 'car')]
+                val_data = pd.DataFrame()
+
+                # val data based on Autobot
+                for agent_id in list(set(all_data_in_one_case['track_id'].tolist())):
+                    agent_data = all_data_in_one_case.loc[(all_data_in_one_case['track_id'] == agent_id)]
+                    if len(agent_data['frame_id'].to_list()) < 40:  # only take complete trajectories
+                        continue
+                    val_data = pd.concat([val_data, agent_data])
+                all_data_in_one_case = val_data
+
+
+                ego_id = np.random.choice(all_data_in_one_case['track_id'].unique().tolist())
                 car_track_dict = dataset_reader.read_tracks_v2(all_data_in_one_case)
 
                 # cal occlusion
                 track_pedes_dict = None # no need track_pedes_dict
-
-                # TODO: get ego id !!!
-                ego_id = next(iter(car_track_dict)) # now is the first car in the scene
                 res = 1. # resolution in grid
 
-                for key, value in tqdm(car_track_dict.items()):
+                for key, value in car_track_dict.items():
                     if key == ego_id:
                         continue
 
@@ -82,16 +92,18 @@ def Dataprocessing():
                             if o_id >0:
                                 all_data_in_one_case.loc[(all_data_in_one_case["timestamp_ms"]==stamp) \
                                                          & (all_data_in_one_case["track_id"]==int(o_id)), "occluded"] = 1
+                
+                # replace ego_id with 0
+                all_data_in_one_case.loc[(all_data_in_one_case["track_id"]==ego_id), "track_id"] = 0
 
-        # beak only for debug
-                    break
+                all_data_in_one_case["case_id"] = case_id
+                all_data_in_one_case["agent_type"] = "car"
                 new_data = pd.concat([new_data, all_data_in_one_case])
-                new_data["case_id"] = case_id
-                new_data["agent_type"] = "car"
-                break
+
+                if cnt > 2:
+                    break
             new_data.to_csv(full_reformat_data_path, index=False)
             break
-        break
 if __name__ == "__main__":
     start_time = datetime.now()
     Dataprocessing()
