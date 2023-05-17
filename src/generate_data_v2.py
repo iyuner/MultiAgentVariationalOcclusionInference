@@ -19,7 +19,7 @@ def Dataprocessing():
     main_folder = '/home/kin/DATA_HDD/yy/INTERACTION-Dataset-DR-multi-v1_2/'
     reformat_folder = '/home/kin/DATA_HDD/yy/INTERACTION-Dataset-DR-multi-v1_2/occ_files_all_n1/'
 
-    for data_type in ['train', 'val']:
+    for data_type in ['val']:
         data_folder = os.path.join(main_folder, data_type)
         reformat_data_folder = os.path.join(reformat_folder, data_type)
         if not os.path.exists(reformat_data_folder):
@@ -92,18 +92,18 @@ def Dataprocessing():
                             if o_id >0:
                                 all_data_in_one_case.loc[(all_data_in_one_case["timestamp_ms"]==stamp) \
                                                          & (all_data_in_one_case["track_id"]==int(o_id)), "occluded"] = 1
-                
+
+                # if no occluded in this case, skip
+                if len(all_data_in_one_case.loc[all_data_in_one_case["occluded"]==1]) < 1:
+                    continue
+
                 # replace ego_id with 0
                 all_data_in_one_case.loc[(all_data_in_one_case["track_id"]==ego_id), "track_id"] = 0
-
                 all_data_in_one_case["case_id"] = case_id
                 all_data_in_one_case["agent_type"] = "car"
                 new_data = pd.concat([new_data, all_data_in_one_case])
-
-                if cnt > 2:
-                    break
+            # save all
             new_data.to_csv(full_reformat_data_path, index=False)
-            break
 if __name__ == "__main__":
     start_time = datetime.now()
     Dataprocessing()
