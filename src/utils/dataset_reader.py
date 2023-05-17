@@ -20,6 +20,7 @@ class Key:
 
 
 class KeyEnum:
+    case_id = 0
     track_id = 0
     frame_id = 1
     time_stamp_ms = 2
@@ -32,6 +33,34 @@ class KeyEnum:
     length = 9
     width = 10
 
+def read_tracks_v2(pd_data):
+
+    track_dict = dict()
+    track_id = None
+
+    for index, row in pd_data.iterrows():
+        track_id = int(row['track_id'])
+        if track_id not in track_dict:
+            track = Track(row['track_id'])
+            track.case_id = int(row['case_id'])
+            track.agent_type = row['agent_type']
+            track.length = float(row['length'])
+            track.width = float(row['width'])
+            track.time_stamp_ms_first = int(row['timestamp_ms'])
+            track.time_stamp_ms_last = int(row['timestamp_ms'])
+            track_dict[track_id] = track
+
+        track = track_dict[track_id]
+        track.time_stamp_ms_last = int(row['timestamp_ms'])
+        ms = MotionState(int(row['timestamp_ms']))
+        ms.x = float(row['x'])
+        ms.y = float(row['y'])
+        ms.vx = float(row['vx'])
+        ms.vy = float(row['vy'])
+        ms.psi_rad = float(row['psi_rad'])
+        track.motion_states[ms.time_stamp_ms] = ms
+
+    return track_dict
 
 def read_tracks(filename):
 
